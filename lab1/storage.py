@@ -1,5 +1,6 @@
 import argparse
 import json
+import os.path
 
 # storage.py --key key_name --val value
 # storage.py --key key_name
@@ -16,6 +17,9 @@ FILE_NAME = "storage.json"
 def work(key=None, value=None):
     if key is None:
         print("Invalid arguments!")
+
+    if not os.path.exists(FILE_NAME):
+        create_file()
 
     if value is None:
         print(get_value(key))
@@ -59,6 +63,12 @@ def find_key(key, data):
     return -1
 
 
+def create_file():
+    with open(FILE_NAME, "w") as f:
+        f.write("")
+        f.close()
+        # json.dump("", write_file)
+
 def get_file_contents():
     with open(FILE_NAME, "r", encoding="utf-8") as file:
         text = file.read()
@@ -75,10 +85,11 @@ parser = argparse.ArgumentParser(description="Task №6", exit_on_error=False)
 parser.add_argument('--key', dest="key", type=str)
 parser.add_argument('--val', dest="value", type=str)
 
-try:
-    args = parser.parse_args()
-    work(args.key, args.value)
-except argparse.ArgumentError:
-    print("Invalid arguments!")
+if __name__ == "__main__":
+    try:
+        args = parser.parse_args()
+        work(args.key, args.value)
+    except argparse.ArgumentError:
+        print("Invalid arguments!")
 
 

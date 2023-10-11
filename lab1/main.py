@@ -73,15 +73,14 @@ ListOfTuples = list[tuple]
 
 def my_enumerate(array) -> ListOfTuples:
     list_tuples = list()
-    for i in range(0, len(array)):
+    for i in range(len(array)):
         tuple = (i, array[i])
         list_tuples.append(tuple)
     return list_tuples
 
 
 def my_enumerate_with_zip(array):
-    array_numbers = list(range(0, len(array)))
-    list_tuples = list(zip(array_numbers, array))
+    list_tuples = list(zip(range(len(array)), array))
     return list_tuples
 
 
@@ -197,10 +196,9 @@ def task_5():
 #
 
 if __name__ == '__main__':
-    # task_1()
+    task_1()
     # task_2()
     # task_3()
     # task_4("task4.txt")
     # task_5()
-    # task_6()
     print("THE HAPPY END!")

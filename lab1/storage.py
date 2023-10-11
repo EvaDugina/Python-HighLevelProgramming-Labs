@@ -17,6 +17,7 @@ FILE_NAME = "storage.json"
 def work(key=None, value=None):
     if key is None:
         print("Invalid arguments!")
+        return
 
     if not os.path.exists(FILE_NAME):
         create_file()
@@ -29,13 +30,13 @@ def work(key=None, value=None):
 
 def get_value(key):
     text = get_file_contents()
-    if text:
-        data = json.loads(text)
-        index = find_key(key, data)
-        if index != -1:
-            return ", ".join(data[index].get(key))
-        else:
-            return "None"
+    if not text:
+        return "None"
+
+    data = json.loads(text)
+    # index = find_key(key, data)
+    if data.get(key):
+        return ", ".join(data.get(key))
     else:
         return "None"
 
@@ -44,14 +45,16 @@ def set_value(key, value):
     text = get_file_contents()
     if text:
         data = json.loads(text)
-        index = find_key(key, data)
-        if index != -1:
-            data[index].get(key).append(value)
+        # index = find_key(key, data)
+
+        if data.get(key):
+            data.get(key).append(value)
         else:
-            data.append({key: [value]})
+            data.setdefault(key, value)
+
         new_text = json.dumps(data)
     else:
-        new_text = json.dumps([{key: [value]}])
+        new_text = json.dumps({key: [value]})
 
     put_file_contents(new_text)
 
@@ -81,11 +84,13 @@ def put_file_contents(text):
         file.close()
 
 
-parser = argparse.ArgumentParser(description="Task №6", exit_on_error=False)
-parser.add_argument('--key', dest="key", type=str)
-parser.add_argument('--val', dest="value", type=str)
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Task №6", exit_on_error=False)
+    parser.add_argument('--key', dest="key", type=str)
+    parser.add_argument('--val', dest="value", type=str)
+
     try:
         args = parser.parse_args()
         work(args.key, args.value)

@@ -2,9 +2,6 @@ from datetime import datetime
 
 
 class MyLogger(object):
-    _status = None
-    _message = None
-    _file = None
 
     def __init__(self, path: str):
         self._file = open(path, "a", encoding="utf-8")
@@ -16,23 +13,6 @@ class MyLogger(object):
 
     def __del__(self):
         self._file.close()
-
-    @property
-    def status(self):
-        return self._status
-
-    @status.setter
-    def status(self, status):
-        self._status = status
-
-    @property
-    def message(self):
-        return self._message
-
-    @message.setter
-    def message(self, message):
-        self._message = message
-
 
     def get_current_time(self):
         now = datetime.now()

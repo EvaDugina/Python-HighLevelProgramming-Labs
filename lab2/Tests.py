@@ -92,8 +92,8 @@ def testLength():
     rand_y = randrange(10)
     my_vector_1 = MyVector(rand_x, rand_y)
 
-    length = my_vector_1.length()
-    print(f"{my_vector_1}.length() = {length}")
+    length = abs(my_vector_1)
+    print(f"abs({my_vector_1}) = {length}")
     print()
 
 

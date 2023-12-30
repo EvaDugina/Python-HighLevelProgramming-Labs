@@ -72,7 +72,7 @@ async def create_lab(request):
         status = 201
         reason = "Лабораторная работа с таким названием уже существует!"
 
-    response_obj = {'status': 'success', 'link': f'http://localhost:8080/labs/{lab_name}'}
+    response_obj = {'status': 'success', 'link': f'http://localhost:8080/labs/{lab_name}', "labs": labs}
     return web.Response(text=json.dumps(response_obj), status=status, reason=reason)
 
 
@@ -93,7 +93,7 @@ async def get_lab_info(request):
             response_obj = {'status': 'failed'}
             status = 201
         else:
-            response_obj = {'status': 'success', lab_name: lab}
+            response_obj = {'status': 'success', lab_name: lab, "labs": labs}
 
         return web.Response(text=json.dumps(response_obj), status=status)
 
@@ -111,7 +111,7 @@ async def get_all_lab(request):
         status = 200
         reason = "OK"
         for name, lab_data in labs.items():
-            lab = {"deadline": lab_data["deadline"]}
+            lab = {"deadline": lab_data["deadline"], "labs": labs}
             labs_data[name] = lab
 
     return web.Response(text=json.dumps(labs_data), status=status, reason=reason)
@@ -138,7 +138,9 @@ async def change_lab(request):
     if status != 400:
         reason = change_lab_param(lab_name, deadline)
 
-    return web.Response(text="", status=status, reason=reason)
+    text = {"labs": labs}
+
+    return web.Response(text=text, status=status, reason=reason)
 
 
 def change_lab_param(lab_name, deadline):
@@ -162,7 +164,9 @@ async def delete_lab(request):
         reason = "OK"
         labs.pop(lab_name)
 
-    return web.Response(text="", status=status, reason=reason)
+    text = {"labs": labs}
+
+    return web.Response(text=text, status=status, reason=reason)
 
 
 app = web.Application()

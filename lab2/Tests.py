@@ -149,6 +149,8 @@ def task3():
     square_list(list_nums)
     square_map(list_nums)
 
+    pow2(10000)
+
 
 @HtmlDecorator
 @TimerDecorator
@@ -167,6 +169,14 @@ def square_list(list_nums) -> list:
 @TimerDecorator
 def square_map(list_nums) -> list:
     return list(map(lambda x: x**2, list_nums))
+
+@HtmlDecorator
+@TimerDecorator
+def pow2(count=1):
+    i = 1
+    for j in range(1, count):
+        i *= j
+    return i
 
 
 ### ЗАДАНИЕ 4

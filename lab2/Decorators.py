@@ -7,7 +7,13 @@ class BaseDecorator:
         self._function = my_function
         self.list_info = list()
 
-    def _logInfo(self, *args):
+    def __call__(self, *args, **kwargs):
+        self.decorate(*args, **kwargs)
+
+    def decorate(self, *args, **kwargs):
+        pass
+
+    def log_info(self, *args):
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")
         self.list_info.append(f"{current_time}: function {self._function.__name__} called with arguments {args}")
@@ -20,18 +26,19 @@ class TimerDecorator(BaseDecorator):
     def __name__(self):
         return self._function.__name__
 
-    def __call__(self, *args, **kwargs):
-        self.start_time = time.perf_counter()
+    def decorate(self, *args, **kwargs):
+        start_time = time.perf_counter()
         result = self._function(*args, **kwargs)
-        self.runtime = time.perf_counter() - self.start_time
-        self._logInfo(*args)
+        self.runtime = time.perf_counter() - start_time
+
+        self.log_info(*args)
+
         return result
 
 
 class HtmlDecorator(BaseDecorator):
 
-    def __call__(self, *args, **kwargs):
+    def decorate(self, *args, **kwargs):
         result = self._function(*args, **kwargs)
-        self._logInfo(*args)
         print(f"<html><body>{self._function.runtime:.10f}</body></html>")
         return result

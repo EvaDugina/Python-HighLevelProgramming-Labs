@@ -1,4 +1,5 @@
 import time
+from abc import abstractmethod
 from datetime import datetime
 
 
@@ -16,6 +17,7 @@ class BaseDecorator:
     def __name__(self):
         return self._function.__name__
 
+    @abstractmethod
     def decorate(self, *args, **kwargs):
         pass
 

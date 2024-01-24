@@ -9,9 +9,11 @@ labs = {}
 @routes.post('/labs')
 async def post_handler(request):
     """ добавление новой лабораторной """
-    request_data = await request.json()
+    request_data = dict(request.rel_url.query)
     lab_name = request_data["lab_name"]
     status, reason = add_new_lab(request_data)
+    print(f"post_handler({lab_name}): ")
+    print(request_data)
 
     message = str(request.url) + "/" + lab_name
     resp = web.Response(text=message, status=status, reason=reason)
@@ -55,6 +57,8 @@ async def delete_all_labs(request):
     status = 404
     reason = "На сервере нет лабораторных, нельзя ничего удалить"
 
+    print(f"delete_all_labs()")
+
     if len(labs) > 0:
         status = 200
         reason = "OK"
@@ -67,6 +71,7 @@ async def delete_all_labs(request):
 async def delete_lab(request):
     """ удаление лабораторной работы """
     lab_name = request.match_info["lab_name"]
+    print(f"delete_lab({lab_name})")
 
     status = 404
     reason = "Такой лаборатоной нет на сервере"
@@ -83,10 +88,12 @@ async def delete_lab(request):
 async def get_lab(request):
     """ получение сведений о лабораторной работе """
     lab_name = request.match_info["lab_name"]
+    print(f"get_lab({lab_name})")
 
     status = 404
     reason = "Такой лаборатоной нет на сервере"
     message = ""
+
     if lab_name in labs:
         status = 200
         reason = "OK"
@@ -103,6 +110,8 @@ async def get_lab(request):
 @routes.get('/labs')
 async def get_all_lab(request):
     """ получение сведений о всех лабораторных работах """
+
+    print(f"get_all_labs()")
 
     status = 404
     reason = "На сервере нет лабораторных"
@@ -123,7 +132,9 @@ async def get_all_lab(request):
 async def put_handler(request):
     """ добавление новой лабораторной """
     lab_name = request.match_info["lab_name"]
-    request_data = await request.json()
+    request_data = dict(request.rel_url.query)
+    print(f"put_handler({lab_name}): ")
+    print(request_data)
 
     status, reason = change_lab_param(lab_name, request_data)
     return web.Response(text="", status=status, reason=reason)

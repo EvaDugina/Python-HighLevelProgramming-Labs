@@ -1,162 +1,74 @@
 import json
+from aiohttp import web
 import re
 
-from aiohttp import web
-
-# + PUT /labs?lab_name=lab1&deadline=21.08.2001 - добавить лабу
-# + GET /labs - посмотреть лабы
-# + GET /labs/lab1 - посмотреть лабу
-# - PUT /labs/lab1?deadline=21.08.2001 - добавить в лабу
-# + DELETE /labs/lab1 - удалить лабу
-
 routes = web.RouteTableDef()
-labs = dict()
-
-# {
-#     "lab_name": {
-#         "deadline": ""
-#     },
-#     ...
-# }
+labs = {}
 
 
-def check_deadline(deadline):
-    if not re.fullmatch(r'\d{1,2}.\d{1,2}.\d{4}', deadline):
-        return False
-    return True
+@routes.post('/labs')
+async def post_handler(request):
+    """ добавление новой лабораторной """
+    request_data = await request.json()
+    lab_name = request_data["lab_name"]
+    status, reason = add_new_lab(request_data)
+
+    message = str(request.url) + "/" + lab_name
+    resp = web.Response(text=message, status=status, reason=reason)
+    resp.headers["Location"] = message
+    return resp
 
 
-def add_lab(lab_name, deadline=None):
-    reason = "OK"
-    lab = {}
+def add_new_lab(request_data):
+    """ добавляем лабораторную, если такой еще не было """
+    status = 409
+    reason = "Такая лабораторная уже есть\n"
+    lab_name = request_data["lab_name"]
+    dead_line = ""
+    description = ""
 
-    if deadline is not None:
-        isDataCorrect = check_deadline(deadline)
-        if not isDataCorrect:
-            reason = "Некорректная дата!"
-        lab["deadline"] = deadline
+    if "passed_students" in request_data:
+        status = 400
+        reason = "Лабораторная еще не добавлена, ее еще никто не мог сдать\n"
+        return status, reason
 
-    labs[lab_name] = lab
-    return reason
+    if "dead_line" in request_data:
+        status, reason = check_dead_line(request_data["dead_line"])
+        if status != 200:
+            return status, reason
+        dead_line = request_data["dead_line"]
 
+    if "description" in request_data:
+        description = request_data["description"]
 
-def remove_lab(lab_name):
-    labs.pop(lab_name)
-
-
-def find_lab(lab_name):
-    return labs.get(lab_name)
-
-
-def set_deadline(lab_name, deadline):
-    labs[lab_name]["deadline"] = deadline
-
-#
-#
-#
-
-
-@routes.put('/labs')
-async def create_lab(request):
-    lab_name = request.query['lab_name']
-    print("Creating new lab with name: ", lab_name)
-
-    lab = find_lab(lab_name)
-    status = 200
-    if lab is None:
-        deadline = None
-        if "deadline" in request.query:
-            deadline = request.query['deadline']
-        reason = add_lab(lab_name, deadline)
-    else:
+    if lab_name not in labs:
         status = 201
-        reason = "Лабораторная работа с таким названием уже существует!"
+        reason = "OK"
+        labs[lab_name] = {"dead_line": dead_line, "description": description, "passed_students": []}
 
-    response_obj = {'status': 'success', 'link': f'http://localhost:8080/labs/{lab_name}', "labs": labs}
-    return web.Response(text=json.dumps(response_obj), status=status, reason=reason)
-
-
-@routes.get('/labs')
-async def get_all_labs(request):
-    response_obj = {'status': 'success', 'labs': labs}
-    return web.Response(text=json.dumps(response_obj))
+    return status, reason
 
 
-@routes.get('/labs/{lab_name}')
-async def get_lab_info(request):
-    try:
-        lab_name = request.match_info.get('lab_name')
-        lab = find_lab(lab_name)
-
-        status = 200
-        if lab is None:
-            response_obj = {'status': 'failed'}
-            status = 201
-        else:
-            response_obj = {'status': 'success', lab_name: lab, "labs": labs}
-
-        return web.Response(text=json.dumps(response_obj), status=status)
-
-    except Exception as e:
-        response_obj = {'status': 'failed', 'reason': str(e)}
-        return web.Response(text=json.dumps(response_obj), status=500)
-
-
-@routes.get('/labs')
-async def get_all_lab(request):
+@routes.delete('/labs')
+async def delete_all_labs(request):
+    """ удаление всех лабораторных """
     status = 404
-    reason = "На сервере нет лабораторных"
-    labs_data = {}
+    reason = "На сервере нет лабораторных, нельзя ничего удалить"
+
     if len(labs) > 0:
         status = 200
         reason = "OK"
-        for name, lab_data in labs.items():
-            lab = {"deadline": lab_data["deadline"], "labs": labs}
-            labs_data[name] = lab
+        labs.clear()
 
-    return web.Response(text=json.dumps(labs_data), status=status, reason=reason)
-
-
-@routes.put('/labs/{lab_name}')
-async def change_lab(request):
-    lab_name = request.match_info["lab_name"]
-    lab = find_lab(lab_name)
-
-    reason = ""
-    status = 200
-
-    if lab is None:
-        status = 400
-        reason = "Такая лабораторная ещё не создана!"
-
-    deadline = None
-    if "deadline" in request.query:
-        deadline = request.query['deadline']
-    else:
-        status = 400
-
-    if status != 400:
-        reason = change_lab_param(lab_name, deadline)
-
-    text = {"labs": labs}
-
-    return web.Response(text=text, status=status, reason=reason)
-
-
-def change_lab_param(lab_name, deadline):
-    if deadline is None:
-        return "Отсутсвует параметр deadline!"
-
-    labs[lab_name]["deadline"] = deadline
-
-    return "OK"
+    return web.Response(text="", status=status, reason=reason)
 
 
 @routes.delete('/labs/{lab_name}')
 async def delete_lab(request):
+    """ удаление лабораторной работы """
     lab_name = request.match_info["lab_name"]
 
-    status = 201
+    status = 404
     reason = "Такой лаборатоной нет на сервере"
 
     if lab_name in labs:
@@ -164,11 +76,100 @@ async def delete_lab(request):
         reason = "OK"
         labs.pop(lab_name)
 
-    text = {"labs": labs}
-
-    return web.Response(text=text, status=status, reason=reason)
+    return web.Response(text="", status=status, reason=reason)
 
 
-app = web.Application()
-app.router.add_routes(routes)
-web.run_app(app)
+@routes.get('/labs/{lab_name}')
+async def get_lab(request):
+    """ получение сведений о лабораторной работе """
+    lab_name = request.match_info["lab_name"]
+
+    status = 404
+    reason = "Такой лаборатоной нет на сервере"
+    message = ""
+    if lab_name in labs:
+        status = 200
+        reason = "OK"
+        cur_lab = labs[lab_name]
+        message = {
+            lab_name: {"dead_line": cur_lab["dead_line"],
+                       "description": cur_lab["description"],
+                       "passed_students": cur_lab["passed_students"]}
+        }
+
+    return web.Response(text=json.dumps(message), status=status, reason=reason)
+
+
+@routes.get('/labs')
+async def get_all_lab(request):
+    """ получение сведений о всех лабораторных работах """
+
+    status = 404
+    reason = "На сервере нет лабораторных"
+    labs_data = {}
+    if len(labs) > 0:
+        status = 200
+        reason = "OK"
+        for name, lab_data in labs.items():
+            lab = {"dead_line": lab_data["dead_line"],
+                   "description": lab_data["description"],
+                   "passed_students": lab_data["passed_students"]}
+            labs_data[name] = lab
+
+    return web.Response(text=json.dumps(labs_data), status=status, reason=reason)
+
+
+@routes.put('/labs/{lab_name}')
+async def put_handler(request):
+    """ добавление новой лабораторной """
+    lab_name = request.match_info["lab_name"]
+    request_data = await request.json()
+
+    status, reason = change_lab_param(lab_name, request_data)
+    return web.Response(text="", status=status, reason=reason)
+
+
+def change_lab_param(lab_name, request_data):
+    """ изменение выбранного параметра лабораторной """
+    status = 200
+    reason = "OK"
+
+    if lab_name not in labs:
+        status = 404
+        reason = "Такая лабораторная еще не была добавлена"
+        return status, reason
+
+    if "dead_line" in request_data:
+        status, reason = check_dead_line(request_data["dead_line"])
+        if status != 200:
+            return status, reason
+        dead_line = request_data["dead_line"]
+        labs[lab_name]["dead_line"] = dead_line
+
+    if "passed_students" in request_data:
+        new_student = request_data["passed_students"]
+        if labs[lab_name]["passed_students"].count(new_student) == 0:
+            labs[lab_name]["passed_students"].append(new_student)
+
+    if "description" in request_data:
+        description = request_data["description"]
+        labs[lab_name]["description"] = description
+
+    return status, reason
+
+
+def check_dead_line(dead_line):
+    status = 200
+    reason = "OK"
+
+    if not re.fullmatch(r'\d{1,2}.\d{1,2}.\d{4}', dead_line):
+        status = 400
+        reason = f"Дедлайн должен иметь формат день.месяц.год"
+
+    return status, reason
+
+
+if __name__ == "__main__":
+    app = web.Application()
+    app.add_routes(routes)
+    web.run_app(app)
